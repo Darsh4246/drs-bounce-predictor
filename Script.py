@@ -9,7 +9,7 @@ import tempfile
 st.set_page_config(layout="centered")
 st.title("🏏 DRS Ball Tracker")
 
-uploaded_file = st.file_uploader("Ay Samarth upload fast da", type=["mp4", "mov", "avi"])
+uploaded_file = st.file_uploader("Upload a cricket video", type=["mp4", "mov", "avi"])
 
 if uploaded_file is not None:
     tfile = tempfile.NamedTemporaryFile(delete=False)
@@ -123,4 +123,4 @@ if uploaded_file is not None:
         st.image(f)
 
 else:
-    st.info("Please upload a video to begin analysis.")
+    st.info("Ay Samarth upload fast da")
