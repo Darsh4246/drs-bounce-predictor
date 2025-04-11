@@ -123,4 +123,4 @@ if uploaded_file is not None:
         st.image(f)
 
 else:
-    st.info("Ay Samarth upload fast da")
+    st.info("Please upload a video to begin analysis.")
