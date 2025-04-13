@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import mediapipe as mp
 import streamlit as st
 import tempfile
+import os
+import uuid
 
 # ----------------- Streamlit Web Interface -----------------
 st.set_page_config(layout="centered")
@@ -28,14 +30,18 @@ if uploaded_file is not None:
     cap = cv2.VideoCapture(video_path)
     frames = []
 
+    original_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    original_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        frame = cv2.resize(frame, (640, 360))
+        frame = cv2.resize(frame, (original_width, original_height))
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+        # Green Ball Detection Range (Adjustable)
         lower_green = np.array([30, 80, 80])
         upper_green = np.array([80, 255, 255])
         green_mask = cv2.inRange(hsv, lower_green, upper_green)
@@ -57,6 +63,7 @@ if uploaded_file is not None:
                         last_ball_position = (cx, cy)
                         ball_positions.append(last_ball_position)
 
+        # Red Stump Detection
         lower_red1 = np.array([0, 100, 100])
         upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([160, 100, 100])
@@ -74,6 +81,7 @@ if uploaded_file is not None:
                 stump_box = (x, y, x + w, y + h)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
+        # Pose Detection
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(rgb_frame)
         if results.pose_landmarks:
@@ -82,9 +90,11 @@ if uploaded_file is not None:
                 y = int(landmark.y * frame.shape[0])
                 cv2.circle(frame, (x, y), 2, (255, 255, 0), -1)
 
+        # Ball Path
         if len(ball_positions) >= 2:
             cv2.polylines(frame, [np.array(ball_positions)], False, (0, 255, 0), 2)
 
+        # Predict Future Path
         if len(ball_positions) >= 5:
             xs, ys = zip(*ball_positions)
             coefficients = np.polyfit(xs, ys, 2)
@@ -113,14 +123,20 @@ if uploaded_file is not None:
         else:
             cv2.putText(frame, "Not Out", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
 
-        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        frames.append(frame)
 
     cap.release()
 
-    # Display results
-    st.markdown("### 🖼️ Processed Video Frames")
-    for f in frames[::3]:
-        st.image(f)
+    # Save video
+    result_filename = f"processed_{uuid.uuid4().hex[:8]}.mp4"
+    result_path = os.path.join(tempfile.gettempdir(), result_filename)
+    out = cv2.VideoWriter(result_path, cv2.VideoWriter_fourcc(*"mp4v"), 30, (original_width, original_height))
+    for f in frames:
+        out.write(f)
+    out.release()
+
+    # Display result
+    st.video(result_path)
 
 else:
     st.info("Ay Samarth upload fast da")
