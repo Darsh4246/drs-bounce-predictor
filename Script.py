@@ -20,7 +20,10 @@ if uploaded_file is not None:
 
     # ----------------- Core Logic -----------------
     ball_positions = []
+    ball_trail = []
+    ball_speeds = []
     last_ball_position = None
+    last_frame_time = None
     stump_box = None
     hit_stumps = False
 
@@ -28,20 +31,17 @@ if uploaded_file is not None:
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
     cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
     frames = []
-
-    original_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    original_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        frame = cv2.resize(frame, (original_width, original_height))
+        frame = cv2.resize(frame, (640, 360))
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Green Ball Detection Range (Adjustable)
         lower_green = np.array([30, 80, 80])
         upper_green = np.array([80, 255, 255])
         green_mask = cv2.inRange(hsv, lower_green, upper_green)
@@ -60,10 +60,15 @@ if uploaded_file is not None:
                 if 0.6 < aspect_ratio < 1.4:
                     cx, cy = x + w // 2, y + h // 2
                     if cy > 100:
+                        if last_ball_position is not None:
+                            dist = np.linalg.norm(np.array((cx, cy)) - np.array(last_ball_position))
+                            speed = dist * fps * 0.034  # Assuming 1 pixel = 3.4 cm
+                            ball_speeds.append(speed)
+
                         last_ball_position = (cx, cy)
                         ball_positions.append(last_ball_position)
+                        ball_trail.append(last_ball_position)
 
-        # Red Stump Detection
         lower_red1 = np.array([0, 100, 100])
         upper_red1 = np.array([10, 255, 255])
         lower_red2 = np.array([160, 100, 100])
@@ -81,7 +86,6 @@ if uploaded_file is not None:
                 stump_box = (x, y, x + w, y + h)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
-        # Pose Detection
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(rgb_frame)
         if results.pose_landmarks:
@@ -90,11 +94,16 @@ if uploaded_file is not None:
                 y = int(landmark.y * frame.shape[0])
                 cv2.circle(frame, (x, y), 2, (255, 255, 0), -1)
 
-        # Ball Path
+        if len(ball_trail) > 1:
+            for i, pt in enumerate(reversed(ball_trail[-15:])):
+                alpha = 1.0 - i / 15.0
+                overlay = frame.copy()
+                cv2.circle(overlay, pt, 6, (255, 100, 0), -1)
+                cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+
         if len(ball_positions) >= 2:
             cv2.polylines(frame, [np.array(ball_positions)], False, (0, 255, 0), 2)
 
-        # Predict Future Path
         if len(ball_positions) >= 5:
             xs, ys = zip(*ball_positions)
             coefficients = np.polyfit(xs, ys, 2)
@@ -123,6 +132,11 @@ if uploaded_file is not None:
         else:
             cv2.putText(frame, "Not Out", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
 
+        if ball_speeds:
+            avg_speed = sum(ball_speeds) / len(ball_speeds)
+            speed_kmph = avg_speed * 3.6  # Convert m/s to km/h
+            cv2.putText(frame, f"Speed: {int(speed_kmph)} km/h", (400, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+
         frames.append(frame)
 
     cap.release()
@@ -130,7 +144,7 @@ if uploaded_file is not None:
     # Save video
     result_filename = f"processed_{uuid.uuid4().hex[:8]}.mp4"
     result_path = os.path.join(tempfile.gettempdir(), result_filename)
-    out = cv2.VideoWriter(result_path, cv2.VideoWriter_fourcc(*"mp4v"), 30, (original_width, original_height))
+    out = cv2.VideoWriter(result_path, cv2.VideoWriter_fourcc(*"mp4v"), 30, (640, 360))
     for f in frames:
         out.write(f)
     out.release()
