@@ -11,7 +11,7 @@ import uuid
 st.set_page_config(layout="centered")
 st.markdown("""
     <div style='display: flex; justify-content: space-between; align-items: center;'>
-        <h1 style='margin: 0;'>🏏 DRS Ball Tracker</h1>
+        <h1 style='margin: 0;'>Balltrack AI</h1>
         <div>
             <span style='font-size: 0.9rem; color: gray;'>V1.1-Alpha</span><br>
             <span style='font-size: 0.75rem; color: gray;'>Changelog: Added trail effect, bounce prediction, speed detection, vertical layout support</span>
