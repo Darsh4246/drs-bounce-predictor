@@ -8,17 +8,26 @@ import os
 import uuid
 
 # ----------------- Streamlit Web Interface -----------------
-st.set_page_config(layout="centered")
+st.set_page_config(layout="wide")
 st.markdown("""
-    <div style='display: flex; justify-content: space-between; align-items: center;'>
-        <h1 style='margin: 0;'>Balltrack AI</h1>
-        <div>
-            <span style='font-size: 0.9rem; color: gray;'>V1.1-Alpha</span><br>
-            <span style='font-size: 0.75rem; color: gray;'>Changelog: Added trail effect, bounce prediction, speed detection, vertical layout support</span>
-        </div>
+    <div style='display: flex; flex-direction: column; align-items: center;'>
+        <h1 style='margin-bottom: 0.5rem;'>Balltrack AI</h1>
+        <span style='font-size: 0.9rem; color: gray;'>V1.1-Alpha</span>
     </div>
 """, unsafe_allow_html=True)
-st.caption("This is in Alpha Phase, so some features may not be fully polished.")
+st.caption("This is an Alpha release, so some features may not be fully polished.")
+
+st.markdown("""
+    <style>
+        .block-container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .stFileUploader, .stVideo, .stInfo, .stCaption {
+            max-width: 100%;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Upload a cricket video", type=["mp4", "mov", "avi"])
 
