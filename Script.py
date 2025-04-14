@@ -18,15 +18,28 @@ st.markdown("""
 st.caption("This is an Alpha release, so some features may not be fully polished.")
 
 st.markdown("""
-    <style>
-        .block-container {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
+<style>
+        .title-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
         }
-        .stFileUploader, .stVideo, .stInfo, .stCaption {
-            max-width: 100%;
+
+        .app-title {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
         }
-    </style>
+
+        .app-version {
+            font-size: 0.9rem;
+            color: gray;
+        }
+</style>
 """, unsafe_allow_html=True)
 
 uploaded_file = st.file_uploader("Upload a cricket video", type=["mp4", "mov", "avi"])
